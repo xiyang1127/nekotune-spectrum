@@ -1,0 +1,4 @@
+{
+  "id": "nekotune.spectrum", "name": "频谱 · Spectrum", "version": "1.0.0", "apiVersion": 2,
+  "contributes": {"settings": [{"id": "spectrum", "title": {"zh": "频谱", "en": "Spectrum"}, "source": "qml/Settings.qml"}]}
+}
