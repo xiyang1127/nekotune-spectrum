@@ -1,4 +1,5 @@
 {
-  "id": "nekotune.spectrum", "name": "频谱 · Spectrum", "version": "1.0.0", "apiVersion": 2,
+  "id": "nekotune.spectrum", "name": "频谱 · Spectrum", "version": "2.0.0", "apiVersion": 3,
+  "description": "实时分析播放音频并显示动态频谱，提供灵敏度、平滑度和显示样式等选项。",
   "contributes": {"settings": [{"id": "spectrum", "title": {"zh": "频谱", "en": "Spectrum"}, "source": "qml/Settings.qml"}]}
 }

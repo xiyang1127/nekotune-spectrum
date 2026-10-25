@@ -1,2 +1,4 @@
 /build*/
 /.sdk/
+/.nekotune-sdk/
+__pycache__/

@@ -92,15 +92,14 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
         timer.setInterval(33);
         connect(&timer, &QTimer::timeout, this, [this] { tick(); });
     }
-    void activate(sdk::IExtensionContext &value, std::function<void(Result<void>)> done) override {
+    void activate(sdk::ExtensionContext &value, sdk::Done done) override {
         context = &value;
-        pcm = sdk::pcmContext(value);
         clock.start();
-        registrations.push_back(value.registerService("status", [this](const sdk::Params &, sdk::Reply reply) {
+        registrations.push_back(value.services().add("status", [this](const sdk::Params &, sdk::Reply reply) {
             reconcile();
             reply(status());
         }));
-        registrations.push_back(value.registerService("acquire", [this](const sdk::Params &, sdk::Reply reply) {
+        registrations.push_back(value.services().add("acquire", [this](const sdk::Params &, sdk::Reply reply) {
             const auto token = leases.acquire(clock.elapsed());
             reconcile();
             if (token.isEmpty()) {
@@ -112,7 +111,7 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
             response.insert("ttlMs", spectrum::Leases::ttlMs);
             reply(response);
         }));
-        registrations.push_back(value.registerService("renew", [this](const sdk::Params &params, sdk::Reply reply) {
+        registrations.push_back(value.services().add("renew", [this](const sdk::Params &params, sdk::Reply reply) {
             if (!leases.renew(params.value("token").toString(), clock.elapsed())) {
                 reply(failure("Spectrum lease expired"));
                 return;
@@ -120,12 +119,12 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
             reconcile();
             reply(status());
         }));
-        registrations.push_back(value.registerService("release", [this](const sdk::Params &params, sdk::Reply reply) {
+        registrations.push_back(value.services().add("release", [this](const sdk::Params &params, sdk::Reply reply) {
             leases.release(params.value("token").toString());
             reconcile();
             reply(status());
         }));
-        events = value.on("*", [this](const sdk::Params &event) {
+        events = value.events().on("*", [this](const sdk::Params &event) {
             const auto name = event.value("event").toString();
             if (name == "player.state_changed")
                 playing = event.value("state").toString() == "playing";
@@ -133,7 +132,7 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
                 reconcile();
         });
         const auto requestGeneration = ++activation;
-        value.hostCall("player.status", {}, [this, requestGeneration](Result<sdk::Params> result) {
+        value.host().call("player.status", {}, [this, requestGeneration](Result<sdk::Params> result) {
             if (!context || requestGeneration != activation || !result)
                 return;
             playing = result.value().value("state").toString() == "playing";
@@ -150,7 +149,6 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
         events.reset();
         registrations.clear();
         leases.clear();
-        pcm = nullptr;
         context = nullptr;
         playing = false;
         lastStatus.clear();
@@ -159,7 +157,7 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
 
   private:
     sdk::Params status() const {
-        const auto capability = pcm ? pcm->pcmCapabilities() : sdk::PcmCapabilities{false, {}, "host_pcm_unsupported"};
+        const auto capability = context ? context->pcm().capabilities() : sdk::PcmCapabilities{false, {}, "host_pcm_unsupported"};
         return {{"version", 1},
                 {"available", capability.available},
                 {"backend", capability.backend},
@@ -174,10 +172,10 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
         if (!context)
             return;
         leases.expire(clock.elapsed());
-        const bool wanted = pcm && pcm->pcmCapabilities().available && playing && leases.size() > 0;
+        const bool wanted = context->pcm().capabilities().available && playing && leases.size() > 0;
         if (wanted && !subscription) {
             worker = std::make_unique<Worker>();
-            subscription = pcm->subscribePcm([this](const sdk::PcmBlock &block) {
+            subscription = context->pcm().subscribe([this](const sdk::PcmBlock &block) {
                 if (worker)
                     worker->submit(block);
             });
@@ -190,7 +188,7 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
         const auto current = status();
         if (current != lastStatus) {
             lastStatus = current;
-            context->publish("status", current);
+            context->events().publish("status", current);
         }
     }
     void tick() {
@@ -204,14 +202,13 @@ class SpectrumPlugin final : public QObject, public sdk::IExtensionPlugin {
         bands.reserve(48);
         for (const auto value : frame->bands)
             bands.append(value);
-        context->publish("frame", {{"version", 1},
+        context->events().publish("frame", {{"version", 1},
                                    {"generation", frame->generation},
                                    {"sequence", ++sequence},
                                    {"positionMs", frame->positionMs},
                                    {"bands", bands}});
     }
-    sdk::IExtensionContext *context = nullptr;
-    sdk::IPcmExtensionContext *pcm = nullptr;
+    sdk::ExtensionContext *context = nullptr;
     std::vector<sdk::RegistrationPtr> registrations;
     sdk::RegistrationPtr subscription, events;
     std::unique_ptr<Worker> worker;

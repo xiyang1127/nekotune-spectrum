@@ -10,7 +10,7 @@ Item {
     ExtensionApi { id: api; onEvent: function(message) { if (message.event === "extension.nekotune.spectrum.status") root.status = message.data } }
     function reasonLabel(value) {
         if (value === "playback_backend_unsupported") return chinese ? "当前播放后端不支持；请使用 FFmpeg 后端" : "Use the FFmpeg playback backend"
-        if (value === "host_pcm_unsupported" || value === "pcm_unavailable") return chinese ? "需要提供 SDK 2.2 PCM 能力的宿主" : "Requires a host with SDK 2.2 PCM support"
+        if (value === "host_pcm_unsupported" || value === "pcm_unavailable") return chinese ? "当前宿主不提供 PCM 数据" : "This host does not provide PCM data"
         if (value === "audio_output_unavailable") return chinese ? "音频输出设备不可用" : "Audio output unavailable"
         return value || "—"
     }

@@ -16,22 +16,24 @@ class PluginTest : public QObject {
         plugin = qobject_cast<sdk::IExtensionPlugin *>(loader.instance());
         QVERIFY2(plugin, qPrintable(loader.errorString()));
     }
-    void oldHostAndRepeatedActivation() {
+    void unsupportedBackendAndRepeatedActivation() {
         FakeContext old;
+        old.supported = false;
         for (int i = 0; i < 2; ++i) {
             bool success = false;
             plugin->activate(old, [&](Result<void> result) { success = bool(result); });
             QVERIFY(success);
             const auto status = old.call("status");
             QVERIFY(status);
-            QCOMPARE(status.value().value("reason").toString(), QString("host_pcm_unsupported"));
+            QCOMPARE(status.value().value("reason").toString(), QString("playback_backend_unsupported"));
+            QVERIFY(!status.value().value("available").toBool());
             plugin->deactivate();
-            QVERIFY(old.services.isEmpty());
+            QVERIFY(old.serviceHandlers.isEmpty());
             QVERIFY(old.listeners.empty());
         }
     }
     void multiConsumerFramesPauseReleaseAndFallback() {
-        PcmContext context;
+        FakeContext context;
         plugin->activate(context, [](Result<void>) {});
         QVERIFY(!context.consumer);
         const auto a = context.call("acquire").value().value("token").toString();
@@ -84,7 +86,7 @@ class PluginTest : public QObject {
         QVERIFY(context.consumer);
         plugin->deactivate();
         QVERIFY(!context.consumer);
-        QVERIFY(context.services.isEmpty());
+        QVERIFY(context.serviceHandlers.isEmpty());
     }
 };
 int main(int argc, char **argv) {

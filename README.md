@@ -1,8 +1,8 @@
 # 频谱 · Spectrum
 
-独立原生扩展 `nekotune.spectrum`（1.0.0），需要提供 SDK 2.2 PCM 能力的 NekoTune。
+独立原生扩展 `nekotune.spectrum`（2.0.0），需要提供 SDK 3（插件接口 `org.nekotune.IExtensionPlugin/3`）的 NekoTune；PCM 能力由宿主播放后端决定，默认 FFmpeg 后端支持。
 只分析播放器默认 FFmpeg 后端的实际输出，不采集系统声音、不启动第二个播放器。
-Qt 兼容播放后端和旧宿主可启用扩展，但状态会明确显示频谱不可用。
+Qt 兼容播放后端可启用扩展，但状态会明确显示频谱不可用；SDK 2.x 旧宿主无法加载本版本。
 
 ## 构建与安装
 
@@ -12,13 +12,13 @@ cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
 
-默认使用 `third_party/nekotune-sdk` 的 SDK 2.2 源码快照；也可用
+默认使用 `third_party/nekotune-sdk` 的 SDK 3 源码快照；也可用
 `-DNEKOTUNE_SDK_SOURCE_DIR=/path/to/NekoTune/sdk` 或 `CMAKE_PREFIX_PATH` 指向目标宿主 SDK。
 必须使用与宿主相同的 Qt 小版本和编译器主版本；Windows 使用 MSYS2 UCRT64。
 源码快照只提供接口，不代表任意已发布宿主已具备 PCM 实现。
 
 在宿主扩展管理器挂载 `build/extensions/nekotune.spectrum`，或安装 `build/packages/` 下的 ZIP，
-确认信任并启用。Linux、Windows 各自构建本机库；CI 只生成构建附件，不自动发布。
+确认信任并启用。Linux、Windows 各自构建本机库；版本标签 CI 在 Linux 和 Windows 测试通过后，生成含两个平台 ZIP 与 SHA-256 校验文件的草稿 Release。
 扩展设置页显示播放后端、消费者数量、可用性和分析状态。
 
 ## 主题接入协议 v1
