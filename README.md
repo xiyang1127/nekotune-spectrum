@@ -14,7 +14,7 @@ ctest --test-dir build --output-on-failure
 
 默认使用 `third_party/nekotune-sdk` 的 SDK 3 源码快照；也可用
 `-DNEKOTUNE_SDK_SOURCE_DIR=/path/to/NekoTune/sdk` 或 `CMAKE_PREFIX_PATH` 指向目标宿主 SDK。
-必须使用与宿主相同的 Qt 小版本和编译器主版本；Windows 使用 MSYS2 UCRT64。
+必须使用与宿主相同的 Qt 小版本和编译器主版本；Windows 使用 MSYS2 UCRT64 / GCC 16 / Qt 6.12.0。
 源码快照只提供接口，不代表任意已发布宿主已具备 PCM 实现。
 
 在宿主扩展管理器挂载 `build/extensions/nekotune.spectrum`，或安装 `build/packages/` 下的 ZIP，
